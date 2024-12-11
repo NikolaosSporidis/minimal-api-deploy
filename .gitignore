@@ -1,0 +1,14 @@
+# Exclude build artifacts
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Other unnecessary files
+*.log

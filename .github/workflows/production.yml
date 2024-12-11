@@ -1,0 +1,67 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  build:
+    name: Build Minimal API
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Setup .NET SDK
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      # Step 3: Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Step 4: Build and publish application
+      - name: Build and publish application
+        run: dotnet publish -c Release -o ./publish
+
+      # Step 5: Zip the artifacts
+      - name: Create a zip file
+        run: zip -r app.zip ./publish
+
+      # Step 6: Upload artifacts
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-artifact
+          path: app.zip
+
+  deploy:
+    name: Deploy to Production Environment
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download artifacts
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: app-artifact
+
+      # Step 2: Login to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 3: Deploy to Azure App Service
+      - name: Deploy to Azure App Service
+        run: |
+          az webapp deploy \
+            --resource-group sporidis-rg-production-westeurope \
+            --name sporidis-lwa-production-westeurope \
+            --src-path app.zip
